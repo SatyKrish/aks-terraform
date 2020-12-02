@@ -5,6 +5,10 @@ locals {
 resource "azurerm_resource_group" "k8s_rg" {
   name     = "${local.aks_cluster_name}-rg"
   location = var.location
+
+  tags = {
+    environment = "devtest"
+  }
 }
 
 resource "azurerm_log_analytics_workspace" "k8s_monitor" {
@@ -13,13 +17,38 @@ resource "azurerm_log_analytics_workspace" "k8s_monitor" {
   resource_group_name = azurerm_resource_group.k8s_rg.name
   sku                 = "PerGB2018"
   retention_in_days   = 30
+
+  tags = {
+    environment = "devtest"
+  }
 }
 
 resource "azurerm_user_assigned_identity" "k8s_uami" {
+  name                = "${local.aks_cluster_name}-uami"
   resource_group_name = azurerm_resource_group.k8s_rg.name
   location            = azurerm_resource_group.k8s_rg.location
 
-  name = "${local.aks_cluster_name}-uami"
+  tags = {
+    environment = "devtest"
+  }
+}
+
+resource "azurerm_storage_account" "k8s_storage" {
+  name                     = "${var.prefix}k8sstorage"
+  resource_group_name      = azurerm_resource_group.k8s_rg.name
+  location                 = azurerm_resource_group.k8s_rg.location
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
+
+  tags = {
+    environment = "devtest"
+  }
+}
+
+resource "azurerm_storage_container" "k8s_backup" {
+  name                  = "${var.prefix}backup"
+  storage_account_name  = azurerm_storage_account.k8s_storage.name
+  container_access_type = "private"
 }
 
 resource "azuread_group" "k8s_administrators" {
@@ -81,6 +110,10 @@ resource "azurerm_kubernetes_cluster" "k8s_cluster" {
       enabled                    = true
       log_analytics_workspace_id = azurerm_log_analytics_workspace.k8s_monitor.id
     }
+  }
+
+  tags = {
+    environment = "devtest"
   }
 }
 
