@@ -5,10 +5,6 @@ locals {
 resource "azurerm_resource_group" "k8s_rg" {
   name     = "${local.aks_cluster_name}-rg"
   location = var.location
-
-  tags = {
-    environment = "devtest"
-  }
 }
 
 resource "azurerm_log_analytics_workspace" "k8s_monitor" {
@@ -17,20 +13,12 @@ resource "azurerm_log_analytics_workspace" "k8s_monitor" {
   resource_group_name = azurerm_resource_group.k8s_rg.name
   sku                 = "PerGB2018"
   retention_in_days   = 30
-
-  tags = {
-    environment = "devtest"
-  }
 }
 
 resource "azurerm_user_assigned_identity" "k8s_uami" {
   name                = "${local.aks_cluster_name}-uami"
   resource_group_name = azurerm_resource_group.k8s_rg.name
   location            = azurerm_resource_group.k8s_rg.location
-
-  tags = {
-    environment = "devtest"
-  }
 }
 
 resource "azurerm_storage_account" "k8s_storage" {
@@ -39,10 +27,6 @@ resource "azurerm_storage_account" "k8s_storage" {
   location                 = azurerm_resource_group.k8s_rg.location
   account_tier             = "Standard"
   account_replication_type = "LRS"
-
-  tags = {
-    environment = "devtest"
-  }
 }
 
 resource "azurerm_storage_container" "k8s_backup" {
@@ -111,10 +95,6 @@ resource "azurerm_kubernetes_cluster" "k8s_cluster" {
       log_analytics_workspace_id = azurerm_log_analytics_workspace.k8s_monitor.id
     }
   }
-
-  tags = {
-    environment = "devtest"
-  }
 }
 
 resource "azurerm_kubernetes_cluster_node_pool" "k8s_nodepool_dev" {
@@ -126,8 +106,4 @@ resource "azurerm_kubernetes_cluster_node_pool" "k8s_nodepool_dev" {
   min_count             = 1
   max_count             = 10
   availability_zones    = [1, 2, 3]
-
-  tags = {
-    environment = "devtest"
-  }
 }
