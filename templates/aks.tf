@@ -83,7 +83,7 @@ resource "azurerm_kubernetes_cluster" "k8s_cluster" {
     }
 
     http_application_routing {
-      enabled = true
+      enabled = false
     }
 
     kube_dashboard {
