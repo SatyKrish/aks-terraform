@@ -1,2 +1,3 @@
-prefix   = "demo"
-location = "Southeast Asia"
+prefix                     = "demo"
+environment                = "dev"
+location                   = "East US 2"

@@ -1,5 +1,9 @@
+provider "azurerm" {
+  features {}
+}
+
 locals {
-  aks_cluster_name = "${var.prefix}-k8s"
+  aks_cluster_name = "${var.prefix}-${var.environment}"
 }
 
 resource "azurerm_resource_group" "k8s_rg" {
@@ -15,29 +19,10 @@ resource "azurerm_log_analytics_workspace" "k8s_monitor" {
   retention_in_days   = 30
 }
 
-resource "azurerm_user_assigned_identity" "k8s_uami" {
+resource "azurerm_user_assigned_identity" "k8s_identity" {
   name                = "${local.aks_cluster_name}-uami"
   resource_group_name = azurerm_resource_group.k8s_rg.name
   location            = azurerm_resource_group.k8s_rg.location
-}
-
-resource "azurerm_storage_account" "k8s_storage" {
-  name                     = "${var.prefix}k8sstorage"
-  resource_group_name      = azurerm_resource_group.k8s_rg.name
-  location                 = azurerm_resource_group.k8s_rg.location
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
-}
-
-resource "azurerm_storage_container" "k8s_backup" {
-  name                  = "${var.prefix}backup"
-  storage_account_name  = azurerm_storage_account.k8s_storage.name
-  container_access_type = "private"
-}
-
-resource "azuread_group" "k8s_administrators" {
-  name        = "${local.aks_cluster_name}-administrators"
-  description = "Kubernetes administrators for the ${local.aks_cluster_name} cluster."
 }
 
 resource "azurerm_kubernetes_cluster" "k8s_cluster" {
@@ -48,7 +33,7 @@ resource "azurerm_kubernetes_cluster" "k8s_cluster" {
 
   default_node_pool {
     name                = "system"
-    vm_size             = "Standard_D2s_v4"
+    vm_size             = "Standard_B2ms"
     type                = "VirtualMachineScaleSets"
     enable_auto_scaling = true
     min_count           = 1
@@ -62,15 +47,12 @@ resource "azurerm_kubernetes_cluster" "k8s_cluster" {
   }
 
   identity {
-    type = "SystemAssigned"
+    type                      = "UserAssigned"
+    user_assigned_identity_id = azurerm_user_assigned_identity.k8s_identity.id
   }
 
   role_based_access_control {
     enabled = true
-    azure_active_directory {
-      managed                = true
-      admin_group_object_ids = [azuread_group.k8s_administrators.object_id]
-    }
   }
 
   addon_profile {
@@ -87,7 +69,7 @@ resource "azurerm_kubernetes_cluster" "k8s_cluster" {
     }
 
     kube_dashboard {
-      enabled = true
+      enabled = false
     }
 
     oms_agent {
@@ -100,7 +82,7 @@ resource "azurerm_kubernetes_cluster" "k8s_cluster" {
 resource "azurerm_kubernetes_cluster_node_pool" "k8s_nodepool_dev" {
   name                  = "devtest"
   kubernetes_cluster_id = azurerm_kubernetes_cluster.k8s_cluster.id
-  vm_size               = "Standard_D2s_v4"
+  vm_size               = "Standard_B2s"
   mode                  = "User"
   enable_auto_scaling   = true
   min_count             = 1
