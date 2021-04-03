@@ -96,7 +96,7 @@ resource "azurerm_kubernetes_cluster" "k8s_cluster" {
     }
 
     kube_dashboard {
-      enabled = true
+      enabled = false
     }
 
     oms_agent {
