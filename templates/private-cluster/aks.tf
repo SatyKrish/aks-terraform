@@ -154,7 +154,7 @@ resource "azurerm_key_vault_key" "k8s_kv_key" {
   key_size     = 2048
 
   depends_on = [
-    azurerm_key_vault_access_policy.k8s-admin-access
+    azurerm_key_vault_access_policy.k8s_admin_access
   ]
 
   key_opts = [
@@ -167,7 +167,7 @@ resource "azurerm_key_vault_key" "k8s_kv_key" {
   ]
 }
 
-resource "azurerm_disk_encryption_set" "k8s-des" {
+resource "azurerm_disk_encryption_set" "k8s_des" {
   name                = "${local.aks_cluster_name}-des"
   location            = azurerm_resource_group.k8s_rg.location
   resource_group_name = azurerm_resource_group.k8s_rg.name
@@ -180,10 +180,10 @@ resource "azurerm_disk_encryption_set" "k8s-des" {
   tags                = { environment = "var.environment" }
 }
 
-resource "azurerm_key_vault_access_policy" "k8s-disk-access" {
+resource "azurerm_key_vault_access_policy" "k8s_disc_access" {
   key_vault_id  = azurerm_key_vault.k8s_kv.id
-  tenant_id     = azurerm_disk_encryption_set.k8s-des.identity.0.tenant_id
-  object_id     = azurerm_disk_encryption_set.k8s-des.identity.0.principal_id
+  tenant_id     = azurerm_disk_encryption_set.k8s_des.identity.0.tenant_id
+  object_id     = azurerm_disk_encryption_set.k8s_des.identity.0.principal_id
 
   key_permissions = [
     "Get",
@@ -192,7 +192,7 @@ resource "azurerm_key_vault_access_policy" "k8s-disk-access" {
   ]
 }
 
-resource "azurerm_key_vault_access_policy" "k8s-admin-access" {
+resource "azurerm_key_vault_access_policy" "k8s_admin_access" {
   key_vault_id = azurerm_key_vault.k8s_kv.id
   tenant_id = data.azurerm_client_config.current.tenant_id
   object_id = data.azurerm_client_config.current.object_id
@@ -230,7 +230,7 @@ resource "azurerm_kubernetes_cluster" "k8s_cluster" {
     dns_service_ip     = "10.2.0.10"
   }
 
-  disk_encryption_set_id = azurerm_disk_encryption_set.k8s-des.id
+  disk_encryption_set_id = azurerm_disk_encryption_set.k8s_des.id
 
   identity {
     type                      = "UserAssigned"
