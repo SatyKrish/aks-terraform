@@ -104,7 +104,7 @@ resource "azurerm_application_insights" "k8s_insights" {
   tags                = { environment = "development" }
 }
 
-# Azure User Assigned Identities Configuration
+# Azure Active Directory Configuration
 resource "azurerm_user_assigned_identity" "k8s_identity" {
   name                = "${local.aks_cluster_name}-cluster-identity"
   location            = azurerm_resource_group.k8s_rg.location
@@ -129,6 +129,11 @@ resource "azurerm_role_assignment" "k8s_kubelete_identity_role" {
   principal_id         = azurerm_user_assigned_identity.k8s_identity.principal_id
   scope                = azurerm_container_registry.k8s_acr.id
   role_definition_name = "ACRPull"
+}
+
+resource "azuread_group" "k8s_administrators" {
+  display_name        = "${local.aks_cluster_name}-administrators"
+  description         = "Kubernetes administrators for the ${local.aks_cluster_name} cluster."
 }
 
 # Azure Customer Managed Key Configuration
@@ -240,6 +245,11 @@ resource "azurerm_kubernetes_cluster" "k8s_cluster" {
 
   role_based_access_control {
     enabled = true
+
+    azure_active_directory {
+      managed                 = true
+      admin_group_object_ids  = [ azuread_group.k8s_administrators.object_id ]
+    }
   }
 
   private_cluster_enabled = true
