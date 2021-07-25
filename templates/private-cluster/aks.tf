@@ -56,7 +56,7 @@ resource "azurerm_subnet" "k8s_subnet3" {
 }
 
 resource "azurerm_subnet" "bastion_subnet" {
-  name                 = "bastion-subnet"
+  name                 = "AzureBastionSubnet"
   resource_group_name  = azurerm_resource_group.k8s_rg.name
   virtual_network_name = azurerm_virtual_network.k8s_vnet.name
   address_prefixes     = ["10.1.12.0/28"]
@@ -112,10 +112,16 @@ resource "azurerm_user_assigned_identity" "k8s_identity" {
   tags                = { environment = "var.environment" }
 }
 
-resource "azurerm_role_assignment" "k8s_identity_role" {
+resource "azurerm_role_assignment" "k8s_network_contributor" {
   principal_id         = azurerm_user_assigned_identity.k8s_identity.principal_id
   scope                = data.azurerm_subscription.k8s_subcription.id
   role_definition_name = "Network Contributor"
+}
+
+resource "azurerm_role_assignment" "k8s_managed_identity_operator" {
+  principal_id         = azurerm_user_assigned_identity.k8s_identity.principal_id
+  scope                = azurerm_user_assigned_identity.k8s_kubelet_identity.id
+  role_definition_name = "Managed Identity Operator"
 }
 
 resource "azurerm_user_assigned_identity" "k8s_kubelet_identity" {
@@ -125,7 +131,7 @@ resource "azurerm_user_assigned_identity" "k8s_kubelet_identity" {
   tags                = { environment = "var.environment" }
 }
 
-resource "azurerm_role_assignment" "k8s_kubelete_identity_role" {
+resource "azurerm_role_assignment" "k8s_acr_pull" {
   principal_id         = azurerm_user_assigned_identity.k8s_identity.principal_id
   scope                = azurerm_container_registry.k8s_acr.id
   role_definition_name = "ACRPull"
@@ -144,11 +150,12 @@ resource "azurerm_key_vault" "k8s_kv" {
   tenant_id                   = data.azurerm_subscription.k8s_subcription.tenant_id
   sku_name                    = "standard"
   enabled_for_disk_encryption = true
+  purge_protection_enabled    = true
   tags                        = { environment = "var.environment" }
 }
 
-resource "azurerm_key_vault_key" "k8s_kv_key" {
-  name         = "${local.aks_cluster_name}-kv-key"
+resource "azurerm_key_vault_key" "k8s_cmk" {
+  name         = "${local.aks_cluster_name}-cmk"
   key_vault_id = azurerm_key_vault.k8s_kv.id
   key_type     = "RSA"
   key_size     = 2048
@@ -171,7 +178,7 @@ resource "azurerm_disk_encryption_set" "k8s_des" {
   name                = "${local.aks_cluster_name}-des"
   location            = azurerm_resource_group.k8s_rg.location
   resource_group_name = azurerm_resource_group.k8s_rg.name
-  key_vault_key_id    = azurerm_key_vault.k8s_kv.id
+  key_vault_key_id    = azurerm_key_vault_key.k8s_cmk.id
 
   identity {
     type = "SystemAssigned"
@@ -213,7 +220,7 @@ resource "azurerm_kubernetes_cluster" "k8s_cluster" {
 
   default_node_pool {
     name                = "system"
-    vm_size             = "Standard_D2sv3"
+    vm_size             = "standard_d2s_v3"
     vnet_subnet_id      = azurerm_subnet.k8s_subnet1.id
     enable_auto_scaling = true
     min_count           = 1
@@ -283,7 +290,7 @@ resource "azurerm_kubernetes_cluster" "k8s_cluster" {
 resource "azurerm_kubernetes_cluster_node_pool" "k8s_nodepool_dev" {
   name                  = "app"
   kubernetes_cluster_id = azurerm_kubernetes_cluster.k8s_cluster.id
-  vm_size               = "Standard_B2s"
+  vm_size               = "standard_b2ms"
   vnet_subnet_id        = azurerm_subnet.k8s_subnet1.id
   mode                  = "User"
   enable_auto_scaling   = true
