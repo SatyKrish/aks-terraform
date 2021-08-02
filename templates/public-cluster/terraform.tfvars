@@ -1,3 +1,3 @@
-prefix                     = "demo"
-environment                = "dev"
+prefix                     = "saty"
+environment                = "public"
 location                   = "East US 2"

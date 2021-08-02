@@ -288,7 +288,7 @@ resource "azurerm_kubernetes_cluster" "k8s_cluster" {
 }
 
 resource "azurerm_kubernetes_cluster_node_pool" "k8s_nodepool_dev" {
-  name                  = "app"
+  name                  = "devtest"
   kubernetes_cluster_id = azurerm_kubernetes_cluster.k8s_cluster.id
   vm_size               = "standard_b2ms"
   vnet_subnet_id        = azurerm_subnet.k8s_subnet1.id

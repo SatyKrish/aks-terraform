@@ -26,6 +26,6 @@ terraform {
     resource_group_name  = "saty-terraform-rg"
     storage_account_name = "satyterraformbackend"
     container_name       = "terraform-state"
-    key                  = "elastic-dev.terraform.tfstate"
+    key                  = "aks.public.terraform.tfstate"
   }
 }

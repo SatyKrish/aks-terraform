@@ -1,3 +1,3 @@
 prefix                     = "saty"
-environment                = "dev"
+environment                = "private"
 location                   = "East US 2"
